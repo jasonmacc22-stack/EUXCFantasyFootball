@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>League Central | Editable Dashboard</title>
+  <style>
+    :root {
+      --bg-dark: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #f59e0b;
+      --accent-secondary: #991b1b;
+      --text-light: #f8fafc;
+      --text-muted: #94a3b8;
+      --border-color: #334155;
+      --edit-glow: #22c55e;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); padding: 20px; }
+
+    header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid var(--accent-secondary); padding-bottom: 20px; }
+    header h1 { font-size: 2.5rem; color: #fff; }
+    header p { color: var(--accent); font-weight: 600; font-size: 1.1rem; margin-top: 5px; }
+
+    /* Control Toolbar */
+    .toolbar { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+    .btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-light); padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+    .btn:hover { background: #334155; }
+    .btn-edit { background: #15803d; border-color: #22c55e; }
+    .btn-edit.active { background: #dc2626; border-color: #ef4444; }
+    .btn-action { background: #0284c7; border-color: #38bdf8; }
+
+    /* Edit Mode State Styling */
+    body.editing [contenteditable="true"] {
+      outline: 2px dashed var(--edit-glow);
+      background-color: rgba(34, 197, 94, 0.08);
+      cursor: text;
+    }
+
+    /* Tabs */
+    .nav-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+    .tab-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-light); padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    .tab-btn.active { background: var(--accent-secondary); border-color: var(--accent); color: #fff; }
+
+    /* Content & Cards */
+    .tab-content { display: none; max-width: 1000px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+    .card { background: var(--card-bg); border-radius: 10px; padding: 20px; margin-bottom: 20px; border: 1px solid var(--border-color); }
+    .card h2 { color: var(--accent); margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; text-align: left; }
+    th, td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+    th { background-color: #0f172a; color: var(--accent); font-size: 0.85rem; text-transform: uppercase; }
+    
+    .table-controls { margin-top: 10px; display: flex; gap: 10px; }
+    .btn-sm { padding: 6px 12px; font-size: 0.85rem; }
+
+    .note-box { background: #0f172a; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); margin-top: 10px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="league-title" contenteditable="false">🏆 LEAGUE CENTRAL</h1>
+    <p id="league-subtitle" contenteditable="false">Standings, Advanced Metrics & Podcast Show Notes</p>
+  </header>
+
+  <!-- Controls for editing & saving -->
+  <div class="toolbar">
+    <button id="toggle-edit-btn" class="btn btn-edit" onclick="toggleEditMode()">✏️ Turn On Edit Mode</button>
+    <button class="btn btn-action" onclick="saveToLocalStorage()">💾 Save Changes</button>
+    <button class="btn" onclick="exportHTML()">📥 Download Updated HTML</button>
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="openTab(event, 'standings')">Standings</button>
+    <button class="tab-btn" onclick="openTab(event, 'extra-stats')">Advanced Stats</button>
+    <button class="tab-btn" onclick="openTab(event, 'podcast')">Podcast Notes</button>
+    <button class="tab-btn" onclick="openTab(event, 'notes')">Commissioner Notes</button>
+  </div>
+
+  <!-- TAB 1: STANDINGS -->
+  <div id="standings" class="tab-content active">
+    <div class="card">
+      <h2>League Standings</h2>
+      <table id="standings-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Team Name</th>
+            <th>W-L-T</th>
+            <th>PF</th>
+            <th>PA</th>
+            <th>Streak</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>Gridiron Gurus</td>
+            <td>3-0</td>
+            <td>412.5</td>
+            <td>330.1</td>
+            <td>W3</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Blitzkrieg FC</td>
+            <td>2-1</td>
+            <td>380.2</td>
+            <td>355.0</td>
+            <td>W1</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-controls">
+        <button class="btn btn-sm" onclick="addRow('standings-table')">➕ Add Team Row</button>
+        <button class="btn btn-sm" onclick="removeRow('standings-table')">➖ Remove Last Row</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: EXTRA STATS -->
+  <div id="extra-stats" class="tab-content">
+    <div class="card">
+      <h2>Advanced Metrics & Extra Stats</h2>
+      <table id="stats-table">
+        <thead>
+          <tr>
+            <th>Team</th>
+            <th>Max PF (Optimal)</th>
+            <th>Efficiency %</th>
+            <th>Luck Index</th>
+            <th>Bench Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Gridiron Gurus</td>
+            <td>430.0</td>
+            <td>95.9%</td>
+            <td>+1.2 (Lucky)</td>
+            <td>48.2</td>
+          </tr>
+          <tr>
+            <td>Blitzkrieg FC</td>
+            <td>410.0</td>
+            <td>92.7%</td>
+            <td>-0.8 (Unlucky)</td>
+            <td>62.4</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-controls">
+        <button class="btn btn-sm" onclick="addRow('stats-table')">➕ Add Stat Row</button>
+        <button class="btn btn-sm" onclick="removeRow('stats-table')">➖ Remove Last Row</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: PODCAST & SHOW NOTES -->
+  <div id="podcast" class="tab-content">
+    <div class="card">
+      <h2 id="pod-title" contenteditable="false">Latest Episode: Week 1 Recap</h2>
+      <div class="note-box" id="pod-notes" contenteditable="false">
+        <p><strong>Episode Summary:</strong> In this episode, we break down the close matchups, highlight the luckiest win of the week, and review waiver wire performance.</p>
+        <br>
+        <p><strong>Timestamps:</strong></p>
+        <ul>
+          <li>00:00 - Intro & Matchup Recaps</li>
+          <li>12:30 - Coach Rating & Lineup Mistakes</li>
+          <li>25:15 - Looking Ahead to Next Week</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: COMMISSIONER NOTES -->
+  <div id="notes" class="tab-content">
+    <div class="card">
+      <h2>Weekly League Notes</h2>
+      <div class="note-box" id="commish-notes" contenteditable="false">
+        <p>Welcome to the new season! Make sure all dues are submitted prior to kickoff next week. Trade deadlines and playoff structures are updated in the main settings.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isEditing = false;
+
+    // Toggle Edit Mode On/Off
+    function toggleEditMode() {
+      isEditing = !isEditing;
+      document.body.classList.toggle('editing', isEditing);
+      
+      const editBtn = document.getElementById('toggle-edit-btn');
+      editBtn.classList.toggle('active', isEditing);
+      editBtn.innerText = isEditing ? '🔒 Lock & Exit Edit Mode' : '✏️ Turn On Edit Mode';
+
+      // Toggle contenteditable on text blocks & table cells
+      const editables = document.querySelectorAll('td, th, #league-title, #league-subtitle, #pod-title, #pod-notes, #commish-notes');
+      editables.forEach(el => {
+        el.contentEditable = isEditing;
+      });
+    }
+
+    // Add row to any table
+    function addRow(tableId) {
+      const table = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+      const colCount = document.getElementById(tableId).rows[0].cells.length;
+      const newRow = table.insertRow();
+      
+      for (let i = 0; i < colCount; i++) {
+        const cell = newRow.insertCell(i);
+        cell.innerText = i === 0 ? table.rows.length : 'Edit text';
+        cell.contentEditable = isEditing;
+      }
+    }
+
+    // Remove last row
+    function removeRow(tableId) {
+      const table = document.getElementById(tableId).getElementsByTagName('tbody')[0];
+      if (table.rows.length > 0) {
+        table.deleteRow(-1);
+      }
+    }
+
+    // Save changes locally in browser memory
+    function saveToLocalStorage() {
+      localStorage.setItem('fantasy_dashboard_html', document.body.innerHTML);
+      alert('Changes saved to your local browser storage!');
+    }
+
+    // Load saved version on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('fantasy_dashboard_html');
+      if (saved) {
+        document.body.innerHTML = saved;
+        // Re-ensure edit mode starts OFF
+        document.body.classList.remove('editing');
+      }
+    });
+
+    // Export entire updated site as index.html
+    function exportHTML() {
+      // Turn off edit mode styling before exporting
+      if (isEditing) toggleEditMode();
+      
+      const fullContent = "<!DOCTYPE html>\n<html>\n" + document.documentElement.innerHTML + "\n</html>";
+      const blob = new Blob([fullContent], { type: "text/html" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "index.html";
+      a.click();
+    }
+
+    // Tab switcher
+    function openTab(evt, tabName) {
+      const tabcontent = document.getElementsByClassName("tab-content");
+      for (let i = 0; i < tabcontent.length; i++) {
+        tabcontent[i].classList.remove("active");
+      }
+      const tablinks = document.getElementsByClassName("tab-btn");
+      for (let i = 0; i < tablinks.length; i++) {
+        tablinks[i].classList.remove("active");
+      }
+      document.getElementById(tabName).classList.add("active");
+      evt.currentTarget.classList.add("active");
+    }
+  </script>
+</body>
+</html>
